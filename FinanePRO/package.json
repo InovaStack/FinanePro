@@ -1,0 +1,21 @@
+{
+  "name": "finanepro",
+  "version": "1.0.0",
+  "main": "sw.js",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/InovaStack/FinanePro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/InovaStack/FinanePro/issues"
+  },
+  "homepage": "https://github.com/InovaStack/FinanePro#readme",
+  "description": ""
+}

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanePRO | Gestão Financeira Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+
+    <!-- Favicon para a aba do navegador -->
+    <link rel="icon" type="image/png" href="icons/favicon-32x32.png">
+    <link rel="shortcut icon" href="icons/favicon-32x32.png">
+
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FinanePRO">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0c;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass {
+            background: rgba(22, 22, 26, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .emerald-gradient {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0c;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2d2d35;
+            border-radius: 10px;
+        }
+
+        .input-dark {
+            background: #1c1c21;
+            border: 1px solid #2d2d35;
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            width: 100%;
+        }
+
+        .input-dark:focus {
+            border-color: #10b981;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body x-data="financeApp()" x-init="init()">
+
+    <header class="p-6 max-w-5xl mx-auto flex justify-between items-center bg-transparent relative">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl emerald-gradient flex items-center justify-center text-black font-black overflow-hidden">
+                <img src="icons/android-chrome-512x512.png" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Finane<span class="text-emerald-500">PRO</span>
+                </h1>
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Enterprise Edition</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Cloud Status -->
+            <button @click="showCloudSettings = true"
+                class="w-10 h-10 rounded-full flex items-center justify-center transition"
+                :class="isCloudActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'">
+                <i :data-lucide="isCloudActive ? 'cloud-check' : 'cloud-off'" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Notifications -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open"
+                    class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/5 hover:bg-slate-700 transition relative">
+                    <i data-lucide="bell" class="w-5 h-5 text-slate-300"></i>
+                    <template x-if="notifications.length > 0">
+                        <span
+                            class="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-[#0a0a0c] rounded-full animate-pulse"></span>
+                    </template>
+                </button>
+                <div x-show="open" @click.away="open = false" x-cloak
+                    class="absolute right-0 mt-3 w-80 glass rounded-3xl p-4 card-shadow z-50 border border-white/10">
+                    <h3 class="text-xs font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-widest"><i
+                            data-lucide="bell" class="w-3 h-3 text-emerald-500"></i> Alertas do Sistema</h3>
+                    <div class="space-y-2 max-h-64 overflow-y-auto pr-2">
+                        <template x-for="note in notifications" :key="note.id">
+                            <div class="p-3 rounded-2xl border border-white/5 bg-white/5">
+                                <p class="text-[11px] font-bold text-white" x-text="note.title"></p>
+                                <p class="text-[10px] text-slate-400 leading-tight" x-text="note.message"></p>
+                            </div>
+                        </template>
+                        <template x-if="notifications.length === 0">
+                            <p class="text-center py-6 text-[10px] text-slate-500 italic">Tudo sob controle no momento.
+                            </p>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <button @click="showAccountsModal = true"
+                class="w-10 h-10 rounded-full emerald-gradient flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:scale-105 transition">
+                <i data-lucide="wallet" class="w-5 h-5 text-black"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-5xl mx-auto px-6 mb-6">
+        <div class="glass p-3 rounded-2xl flex items-center justify-between border-white/5 shadow-inner">
+            <button @click="prevMonth()" class="p-2 hover:bg-white/5 rounded-xl transition"><i
+                    data-lucide="chevron-left" class="w-5 h-5 text-slate-400"></i></button>
+            <div class="text-center">
+                <h2 class="text-base font-bold text-white capitalize" x-text="getMonthLabel()"></h2>
+                <span class="text-[9px] text-slate-600 font-bold uppercase tracking-[0.3em]"
+                    x-text="currentYear"></span>
+            </div>
+            <button @click="nextMonth()" class="p-2 hover:bg-white/5 rounded-xl transition"><i
+                    data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i></button>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="glass p-5 rounded-3xl border-white/5">
+            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block mb-1">Renda Mensal</span>
+            <span @click="editSalary()"
+                class="text-lg font-bold text-white cursor-pointer hover:text-emerald-500 transition"
+                x-text="'R$ ' + formatMoney(salary)"></span>
+        </div>
+        <div class="glass p-5 rounded-3xl border-red-500/10">
+            <span class="text-[9px] text-red-500 font-black uppercase tracking-widest block mb-1">Pendências</span>
+            <span class="text-lg font-bold text-red-400" x-text="'R$ ' + formatMoney(getTotalPending())"></span>
+        </div>
+        <div class="glass p-5 rounded-3xl border-emerald-500/10">
+            <span class="text-[9px] text-emerald-500 font-black uppercase tracking-widest block mb-1">Total Pago</span>
+            <span class="text-lg font-bold text-emerald-400" x-text="'R$ ' + formatMoney(getTotalPaid())"></span>
+        </div>
+        <div class="glass p-5 rounded-3xl border-white/5 relative">
+            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block mb-1">Saldo
+                Estimado</span>
+            <span class="text-lg font-bold text-white" x-text="'R$ ' + formatMoney(salary - getTotalExpenses())"></span>
+        </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 pb-32">
+        <template x-for="category in categories" :key="category">
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-end px-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-white uppercase tracking-wider" x-text="category">
+                            </h3>
+                            <button @click="deleteCategory(category)"
+                                class="text-slate-800 hover:text-red-500 transition"><i data-lucide="trash-2"
+                                    class="w-3 h-3"></i></button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-bold">Total: R$ <span
+                                x-text="formatMoney(getCategoryTotal(category))"></span></p>
+                    </div>
+                    <button @click="openAddModal(category)"
+                        class="w-8 h-8 rounded-full emerald-gradient flex items-center justify-center text-black hover:scale-110 shadow-lg shadow-emerald-500/20 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <template x-for="item in getFilteredItems(category)" :key="item.id">
+                        <div @click="openDetailModal(item)"
+                            class="glass p-4 rounded-3xl flex items-center justify-between hover:border-emerald-500/40 transition group cursor-pointer shadow-lg">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner"
+                                    :class="item.paid ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-900 text-slate-500'">
+                                    <i :data-lucide="item.paid ? 'check-circle-2' : 'clock'" class="w-5 h-5"></i>
+                                </div>
+                                <div class="max-w-[120px] md:max-w-none">
+                                    <span class="text-sm font-bold text-white block truncate" x-text="item.name"></span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] text-slate-500 font-bold"
+                                            x-text="formatShortDate(item.dueDate)"></span>
+                                        <template x-if="item.installments > 1">
+                                            <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded"
+                                                x-text="item.installmentCurrent + '/' + item.installments"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-black"
+                                    :class="item.paid ? 'text-emerald-500' : 'text-slate-200'"
+                                    x-text="'R$ ' + formatMoney(item.amount)"></span>
+                                <button @click.stop="togglePaid(item.id)" class="p-2 rounded-xl transition"
+                                    :class="item.paid ? 'text-emerald-500' : 'text-slate-800 hover:text-emerald-500'">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        <button @click="addCategory()"
+            class="border-2 border-dashed border-slate-900 rounded-[2rem] p-10 flex flex-col items-center gap-3 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition group">
+            <i data-lucide="plus-square" class="w-8 h-8 text-slate-800 group-hover:text-emerald-500"></i>
+            <span
+                class="text-[10px] font-black text-slate-700 uppercase tracking-widest group-hover:text-emerald-500">Adicionar
+                Bloco</span>
+        </button>
+    </main>
+
+    <!-- Modal: Adicionar Item -->
+    <div x-show="showAddModal" x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+        <div class="glass w-full max-w-md rounded-[2.5rem] p-8 card-shadow border border-white/10"
+            @click.away="showAddModal = false">
+            <h2 class="text-xl font-bold text-white mb-6 uppercase tracking-wider">Nova Transação</h2>
+            <div class="space-y-4">
+                <input type="text" x-model="newItem.name" class="input-dark" placeholder="O que você comprou?">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" x-model="newItem.amount" class="input-dark" placeholder="Valor: 0.00">
+                    <input type="date" x-model="newItem.date" class="input-dark">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] text-slate-500 font-bold uppercase ml-2 mb-1 block">Nº
+                            Parcelas</label>
+                        <input type="number" x-model="newItem.installments" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-slate-500 font-bold uppercase ml-2 mb-1 block">Dia
+                            Vencto</label>
+                        <input type="number" x-model="newItem.dueDay" class="input-dark" min="1" max="31">
+                    </div>
+                </div>
+                <button @click="saveNewItem()"
+                    class="w-full emerald-gradient text-black font-black py-4 rounded-2xl shadow-xl hover:brightness-110 transition mt-4">CONFIRMAR
+                    E SALVAR</button>
+                <button @click="showAddModal = false"
+                    class="w-full text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-2">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalhes -->
+    <div x-show="showDetailModal" x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
+        <div class="glass w-full max-w-sm rounded-[3rem] p-10 text-center relative border border-white/5"
+            @click.away="showDetailModal = false">
+            <template x-if="selectedItem">
+                <div>
+                    <div
+                        class="w-20 h-20 rounded-[2rem] emerald-gradient mx-auto mb-6 flex items-center justify-center text-black shadow-2xl">
+                        <i :data-lucide="selectedItem.paid ? 'check-circle' : 'file-text'" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-white leading-tight mb-2 uppercase" x-text="selectedItem.name">
+                    </h3>
+                    <p class="text-[10px] text-emerald-500 font-black tracking-[0.3em] mb-8"
+                        x-text="selectedItem.category"></p>
+
+                    <div class="space-y-3 text-left">
+                        <div class="bg-white/5 p-4 rounded-2xl">
+                            <span
+                                class="text-[9px] text-slate-500 uppercase font-black block mb-1 tracking-widest">Valor
+                                do Título</span>
+                            <span class="text-xl font-bold text-white">R$ <span
+                                    x-text="formatMoney(selectedItem.amount)"></span></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-white/5 p-4 rounded-2xl">
+                                <span class="text-[9px] text-slate-500 uppercase font-bold block mb-1">Vencimento</span>
+                                <span class="text-xs font-bold text-white"
+                                    x-text="formatShortDate(selectedItem.dueDate)"></span>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl">
+                                <span class="text-[9px] text-slate-500 uppercase font-bold block mb-1">Status</span>
+                                <span class="text-[10px] font-black"
+                                    :class="selectedItem.paid ? 'text-emerald-500' : 'text-red-500'"
+                                    x-text="selectedItem.paid ? 'LIQUIDADO' : 'EM ABERTO'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-10">
+                        <button @click="deleteItem(selectedItem.id)"
+                            class="flex-1 py-4 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition">Excluir</button>
+                        <button @click="showDetailModal = false"
+                            class="flex-1 py-4 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition">Fechar</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Cloud Config -->
+    <div x-show="showCloudSettings" x-cloak
+        class="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/95">
+        <div class="glass w-full max-w-md rounded-[3rem] p-10 border border-emerald-500/10 shadow-emerald-500/5">
+            <h2 class="text-xl font-black text-white mb-2 flex items-center gap-2"><i data-lucide="cloud"
+                    class="text-emerald-500"></i> SUPABASE CLOUD</h2>
+            <p class="text-[10px] text-slate-500 font-bold mb-8 leading-relaxed uppercase tracking-widest">Conecte
+                sua
+                conta para backup em tempo real.</p>
+            <div class="space-y-4">
+                <input type="text" x-model="supabaseUrl" class="input-dark text-xs"
+                    placeholder="URL do Projeto Supabase">
+                <input type="password" x-model="supabaseKey" class="input-dark text-xs" placeholder="Chave de API Anon">
+                <button @click="saveCloudConfig()"
+                    class="w-full emerald-gradient text-black py-4 rounded-2xl font-black mt-4 shadow-xl">Sincronizar
+                    Agora</button>
+                <button @click="showCloudSettings = false"
+                    class="w-full text-[10px] text-slate-600 font-bold mt-4">Continuar Offline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais adicionais (Contas Bancárias) omitidos aqui seriam reinseridos de forma completa no arquivo final -->
+    <div x-show="showAccountsModal" x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90">
+        <div class="glass w-full max-w-sm rounded-[2.5rem] p-10" @click.away="showAccountsModal = false">
+            <h2 class="text-lg font-bold text-white mb-6 uppercase tracking-wider">Bancos e Contas</h2>
+            <div class="space-y-3">
+                <template x-for="act in bankAccounts" :key="act.id">
+                    <div
+                        class="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5 shadow-inner">
+                        <div>
+                            <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest" x-text="act.bank">
+                            </p>
+                            <p class="text-sm font-bold text-white" x-text="'R$ ' + formatMoney(act.balance)"></p>
+                        </div>
+                        <button @click="editAccount(act)"
+                            class="p-2 text-slate-700 hover:text-emerald-500 transition"><i data-lucide="edit-3"
+                                class="w-4 h-4"></i></button>
+                    </div>
+                </template>
+                <button @click="addBankAccount()"
+                    class="w-full border-2 border-dashed border-slate-900 rounded-2xl py-4 text-[10px] text-slate-600 font-black hover:border-emerald-500/40 hover:text-emerald-500 transition mt-4 tracking-widest uppercase">+
+                    Nova Conta</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function financeApp() {
+            return {
+                salary: 5000,
+                currentMonth: new Date().getMonth(),
+                currentYear: new Date().getFullYear(),
+                categories: ['Cartão Santander', 'Terreno', 'Seguro Moto'],
+                bankAccounts: [{ id: 1, bank: 'Carteira', balance: 0 }],
+                transactions: [],
+                notifications: [],
+                supabaseUrl: '',
+                supabaseKey: '',
+                isCloudActive: false,
+                supabase: null,
+                showAddModal: false,
+                showDetailModal: false,
+                showAccountsModal: false,
+                showCloudSettings: false,
+                selectedItem: null,
+                activeCategory: '',
+                newItem: { name: '', amount: '', date: new Date().toISOString().split('T')[0], installments: 1, dueDay: 10 },
+
+                init() {
+                    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+                    if ('Notification' in window && Notification.permission !== 'granted') Notification.requestPermission();
+
+                    const savedCloud = localStorage.getItem('finaneProCloud_v1');
+                    if (savedCloud) {
+                        const config = JSON.parse(savedCloud);
+                        this.supabaseUrl = config.url;
+                        this.supabaseKey = config.key;
+                        this.connectSupabase();
+                    }
+
+                    const local = localStorage.getItem('finaneProLocal_v3');
+                    if (local) {
+                        const data = JSON.parse(local);
+                        this.salary = data.salary || 5000;
+                        this.transactions = data.transactions || [];
+                        this.categories = data.categories || ['Cartão Santander', 'Terreno', 'Seguro Moto'];
+                        this.bankAccounts = data.bankAccounts || [];
+                    }
+                    this.checkNotifications();
+                    this.refreshIcons();
+                },
+
+                async connectSupabase() {
+                    if (this.supabaseUrl && this.supabaseKey) {
+                        try {
+                            this.supabase = supabase.createClient(this.supabaseUrl, this.supabaseKey);
+                            this.isCloudActive = true;
+                            await this.pullCloud();
+                        } catch (e) { console.error("Cloud Error:", e); this.isCloudActive = false; }
+                    }
+                },
+
+                async saveCloudConfig() {
+                    localStorage.setItem('finaneProCloud_v1', JSON.stringify({ url: this.supabaseUrl, key: this.supabaseKey }));
+                    await this.connectSupabase();
+                    this.showCloudSettings = false;
+                },
+
+                async pullCloud() {
+                    if (!this.supabase) return;
+                    const { data: trans } = await this.supabase.from('transactions').select('*');
+                    const { data: acts } = await this.supabase.from('bank_accounts').select('*');
+                    if (trans && trans.length > 0) this.transactions = trans;
+                    if (acts && acts.length > 0) this.bankAccounts = acts;
+                    this.saveLocal();
+                },
+
+                async pushCloud(table, item) {
+                    if (!this.supabase) return;
+                    await this.supabase.from(table).upsert(item);
+                },
+
+                saveLocal() {
+                    localStorage.setItem('finaneProLocal_v3', JSON.stringify({
+                        salary: this.salary, transactions: this.transactions,
+                        categories: this.categories, bankAccounts: this.bankAccounts
+                    }));
+                },
+
+                save() {
+                    this.saveLocal();
+                    this.checkNotifications();
+                    this.refreshIcons();
+                },
+
+                checkNotifications() {
+                    const today = new Date();
+                    this.notifications = [];
+                    const currentItems = this.transactions.filter(t => {
+                        const d = new Date(t.dueDate);
+                        return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                    });
+
+                    currentItems.forEach((item, index) => {
+                        const diff = Math.ceil((new Date(item.dueDate) - today) / 86400000);
+                        if (!item.paid && diff <= 3 && diff >= 0) {
+                            const title = 'Vencimento Próximo';
+                            const msg = `${item.name} vence em ${diff === 0 ? 'HOJE' : diff + ' dias'}`;
+                            this.notifications.push({ id: Math.random(), title: title, message: msg });
+
+                            // Dispara notificação de sistema APENAS se tiver permissão
+                            if (Notification.permission === 'granted') {
+                                new Notification(title, { body: msg, icon: 'icons/android-chrome-512x512.png' });
+                            }
+                        }
+                    });
+
+                    if (this.transactions.length > 0 && currentItems.reduce((a, b) => a + b.amount, 0) > this.salary * 0.8) {
+                        this.notifications.push({ id: Math.random(), title: 'Limite de Gastos', message: 'Você comprometeu 80% da sua renda.' });
+                    }
+                },
+
+                addCategory() { const n = prompt("Nome do novo bloco:"); if (n) { this.categories.push(n); this.save(); } },
+                deleteCategory(c) { if (confirm("Deseja apagar este bloco e todos os itens dele?")) { this.categories = this.categories.filter(x => x !== c); this.transactions = this.transactions.filter(t => t.category !== c); this.save(); } },
+                editSalary() { const s = prompt("Informe seu salário mensal:", this.salary); if (s) { this.salary = parseFloat(s); this.save(); } },
+
+                addBankAccount() {
+                    const b = prompt("Nome do Banco:"); const s = prompt("Saldo Atual:");
+                    if (b) {
+                        const act = { id: Date.now(), bank: b, balance: parseFloat(s || 0) };
+                        this.bankAccounts.push(act);
+                        this.pushCloud('bank_accounts', act);
+                        this.save();
+                    }
+                },
+                editAccount(act) {
+                    const val = prompt("Atualizar Saldo:", act.balance);
+                    if (val !== null) {
+                        act.balance = parseFloat(val);
+                        this.pushCloud('bank_accounts', act);
+                        this.save();
+                    }
+                },
+
+                openAddModal(c) { this.activeCategory = c; this.showAddModal = true; this.refreshIcons(); },
+
+                async saveNewItem() {
+                    const base = new Date(this.newItem.date + 'T12:00:00');
+                    const amt = parseFloat(this.newItem.amount) / parseInt(this.newItem.installments);
+                    for (let i = 0; i < this.newItem.installments; i++) {
+                        const d = new Date(base); d.setMonth(base.getMonth() + i); d.setDate(this.newItem.dueDay);
+                        const item = {
+                            id: Date.now() + Math.random(), name: this.newItem.name, amount: amt,
+                            category: this.activeCategory, date: base.toISOString(), dueDate: d.toISOString(),
+                            installments: parseInt(this.newItem.installments), installmentCurrent: i + 1, paid: false
+                        };
+                        this.transactions.push(item);
+                        this.pushCloud('transactions', item);
+                    }
+                    this.save(); this.showAddModal = false;
+                },
+
+                openDetailModal(item) { this.selectedItem = item; this.showDetailModal = true; this.refreshIcons(); },
+                async togglePaid(id) {
+                    const item = this.transactions.find(t => t.id === id);
+                    item.paid = !item.paid;
+                    this.pushCloud('transactions', item);
+                    this.save();
+                },
+                async deleteItem(id) {
+                    if (this.isCloudActive) await this.supabase.from('transactions').delete().eq('id', id);
+                    this.transactions = this.transactions.filter(t => t.id !== id);
+                    this.save(); this.showDetailModal = false;
+                },
+
+                formatMoney(v) { return parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); },
+                formatShortDate(d) { return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); },
+                getMonthLabel() { return new Date(this.currentYear, this.currentMonth).toLocaleString('pt-br', { month: 'long' }); },
+                prevMonth() { if (this.currentMonth === 0) { this.currentMonth = 11; this.currentYear--; } else this.currentMonth--; this.refreshIcons(); },
+                nextMonth() { if (this.currentMonth === 11) { this.currentMonth = 0; this.currentYear++; } else this.currentMonth++; this.refreshIcons(); },
+                getTotalExpenses() { return this.transactions.filter(t => new Date(t.dueDate).getMonth() === this.currentMonth && new Date(t.dueDate).getFullYear() === this.currentYear).reduce((a, b) => a + b.amount, 0); },
+                getTotalPaid() { return this.transactions.filter(t => t.paid && new Date(t.dueDate).getMonth() === this.currentMonth && new Date(t.dueDate).getFullYear() === this.currentYear).reduce((a, b) => a + b.amount, 0); },
+                getTotalPending() { return this.getTotalExpenses() - this.getTotalPaid(); },
+                getFilteredItems(cat) { return this.transactions.filter(t => t.category === cat && new Date(t.dueDate).getMonth() === this.currentMonth && new Date(t.dueDate).getFullYear() === this.currentYear); },
+                getCategoryTotal(cat) { return this.getFilteredItems(cat).reduce((a, b) => a + b.amount, 0); },
+                refreshIcons() { setTimeout(() => lucide.createIcons(), 100); }
+            }
+        }
+    </script>
+</body>
+
+</html>

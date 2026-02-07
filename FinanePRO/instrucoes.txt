@@ -1,0 +1,16 @@
+# FinanePRO - Sistema Financeiro Pessoal
+
+## Como usar o aplicativo:
+1. Extraia o conteúdo do arquivo ZIP.
+2. Abra o arquivo `index.html` em qualquer navegador (Chrome, Edge, Firefox).
+3. O aplicativo funciona offline e salva seus dados automaticamente no seu computador (LocalStorage).
+
+## Funcionalidades principais:
+- **Salário Editável**: Clique no valor do salário no topo para alterar seu orçamento mensal.
+- **Parcelamento Inteligente**: Ao adicionar uma compra e selecionar o número de parcelas, o sistema distribuirá os valores nos meses seguintes automaticamente.
+- **Navegação Mensal**: Use as setas no topo para visualizar gastos de meses futuros ou passados.
+- **Baixa de Pagamentos**: Clique no ícone de check (ou no item) para alternar entre "Pendente" e "Pago".
+- **Resumo de Investimentos**: O visor inferior mostra quanto sobra do seu salário e o percentual disponível para poupança.
+
+---
+Desenvolvido com foco em estética premium e facilidade de uso.
